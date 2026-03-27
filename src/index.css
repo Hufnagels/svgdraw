@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root, [data-theme="dark"] {
+  --bg-app:      #0f172a;
+  --bg-surface:  #1e293b;
+  --bg-input:    #0f172a;
+  --border:      #334155;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --text-disabled:  #475569;
+}
+
+[data-theme="light"] {
+  --bg-app:      #f1f5f9;
+  --bg-surface:  #ffffff;
+  --bg-input:    #f8fafc;
+  --border:      #e2e8f0;
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+  --text-disabled:  #cbd5e1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
