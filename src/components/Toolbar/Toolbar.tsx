@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useDrawingStore } from '../../store/useDrawingStore'
 import { useTemporalStore } from '../../store/temporalStore'
 import type { ToolType } from '../../types/interaction'
@@ -9,9 +10,10 @@ import { InsertCodeModal } from './InsertCodeModal'
 import {
   MousePointer2, Circle, Square, Minus, Type, Image as ImageIcon,
   Barcode, QrCode, Pencil, Undo2, Redo2, Trash2, Group, Ungroup,
-  ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, Grid, Grid2x2, Copy, FileCode2, Cog
+  ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, Grid, Grid2x2, Copy, FileCode2, FileUp, Cog
 } from 'lucide-react'
 import { ZPLDialog } from '../ZPLDialog'
+import { ZPLImportDialog } from '../ZPLImportDialog'
 import { LabelSettingsDialog } from './LabelSettingsDialog'
 
 const tools: Array<{ tool: ToolType; icon: React.ReactNode; label: string }> = [
@@ -48,8 +50,24 @@ export function Toolbar() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
-  const [showZPL,      setShowZPL]      = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
+  const [showZPL,       setShowZPL]       = useState(false)
+  const [showZPLImport, setShowZPLImport] = useState(false)
+  const [showSettings,  setShowSettings]  = useState(false)
+  const [showZplMenu,   setShowZplMenu]   = useState(false)
+  const [zplMenuPos,    setZplMenuPos]    = useState({ top: 0, left: 0 })
+  const zplBtnRef      = useRef<HTMLButtonElement>(null)
+  const zplDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showZplMenu) return
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (!zplBtnRef.current?.contains(t) && !zplDropdownRef.current?.contains(t))
+        setShowZplMenu(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showZplMenu])
 
   function handleInsertImage() { fileInputRef.current?.click() }
 
@@ -217,7 +235,29 @@ export function Toolbar() {
 
         {divider}
 
-        {btn('ZPL Export', () => setShowZPL(true), <FileCode2 size={16} />)}
+        {/* ZPL dropdown */}
+        <button
+          ref={zplBtnRef}
+          title="ZPL"
+          onClick={() => {
+            const rect = zplBtnRef.current?.getBoundingClientRect()
+            if (rect) setZplMenuPos({ top: rect.bottom + 4, left: rect.left })
+            setShowZplMenu((v) => !v)
+          }}
+          style={{
+            height: 36, padding: '0 8px',
+            display: 'flex', alignItems: 'center', gap: 4,
+            borderRadius: 6, border: 'none',
+            background: showZplMenu ? 'var(--bg-input)' : 'transparent',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer', fontSize: 12, fontWeight: 500, flexShrink: 0,
+          }}
+        >
+          <FileCode2 size={16} />
+          <span>ZPL</span>
+          <ChevronDown size={12} />
+        </button>
+
         {btn('Label Settings', () => setShowSettings(true), <Cog size={16} />)}
 
         <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
@@ -232,8 +272,43 @@ export function Toolbar() {
         />
       )}
 
-      {showZPL      && <ZPLDialog onClose={() => setShowZPL(false)} />}
-      {showSettings && <LabelSettingsDialog onClose={() => setShowSettings(false)} />}
+      {showZPL       && <ZPLDialog onClose={() => setShowZPL(false)} />}
+      {showZPLImport && <ZPLImportDialog onClose={() => setShowZPLImport(false)} />}
+      {showSettings  && <LabelSettingsDialog onClose={() => setShowSettings(false)} />}
+
+      {showZplMenu && createPortal(
+        <div
+          ref={zplDropdownRef}
+          style={{
+            position: 'fixed', top: zplMenuPos.top, left: zplMenuPos.left,
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderRadius: 8, padding: 4, zIndex: 9999,
+            display: 'flex', flexDirection: 'column', gap: 2, minWidth: 150,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          {[
+            { label: 'Export ZPL', icon: <FileCode2 size={14} />, action: () => { setShowZPL(true); setShowZplMenu(false) } },
+            { label: 'Import ZPL', icon: <FileUp size={14} />,    action: () => { setShowZPLImport(true); setShowZplMenu(false) } },
+          ].map(({ label, icon, action }) => (
+            <button
+              key={label}
+              onClick={action}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 10px', borderRadius: 5, border: 'none',
+                background: 'transparent', color: 'var(--text-primary)',
+                cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-input)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              {icon}{label}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
     </>
   )
 }
