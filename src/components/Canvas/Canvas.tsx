@@ -173,42 +173,45 @@ export function Canvas() {
             borderRadius={borderRadius}
           />
 
-          {/* Render all root-level elements */}
-          {zOrder
-            .filter((id) => {
-              const el = elements[id]
-              return el && !el.parentId
-            })
-            .map((id) => {
-              const el = elements[id]
-              if (!el) return null
-              return (
-                <ElementRenderer
-                  key={id}
-                  el={el}
-                  elements={elements}
-                  onMouseDown={handleMouseDown}
-                />
-              )
-            })}
+          {/* Drawing content — clipped to rounded canvas shape when borderRadius > 0 */}
+          <g clipPath={borderRadius > 0 ? 'url(#canvas-clip)' : undefined}>
+            {/* Render all root-level elements */}
+            {zOrder
+              .filter((id) => {
+                const el = elements[id]
+                return el && !el.parentId
+              })
+              .map((id) => {
+                const el = elements[id]
+                if (!el) return null
+                return (
+                  <ElementRenderer
+                    key={id}
+                    el={el}
+                    elements={elements}
+                    onMouseDown={handleMouseDown}
+                  />
+                )
+              })}
 
-          {/* Ghost element during creation */}
-          <GhostElement />
+            {/* Ghost element during creation */}
+            <GhostElement />
 
-          {/* Freehand drawing preview */}
-          {freehandPath && (
-            <path
-              d={freehandPath}
-              fill="none"
-              stroke={defaultStyle.stroke}
-              strokeWidth={defaultStyle.strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.7}
-              pointerEvents="none"
-              className="ghost-element"
-            />
-          )}
+            {/* Freehand drawing preview */}
+            {freehandPath && (
+              <path
+                d={freehandPath}
+                fill="none"
+                stroke={defaultStyle.stroke}
+                strokeWidth={defaultStyle.strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity={0.7}
+                pointerEvents="none"
+                className="ghost-element"
+              />
+            )}
+          </g>
 
           {/* Alignment guides */}
           <AlignmentGuides />

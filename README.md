@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# SVG Label Designer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based vector label editor built for designing and printing barcode labels. The goal was to have a self-contained drawing tool that produces print-ready output at exact physical dimensions (mm), with first-class support for industrial barcode symbologies and ZPL (Zebra Programming Language) interchange.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What you can do
 
-## React Compiler
+### Draw and design
+- **Shapes** — rectangle, ellipse, line with configurable fill, stroke color, and stroke width
+- **Text** — free-form text with font size, weight, style, and alignment controls
+- **Freehand** — pen tool for free drawing
+- **Images** — insert raster images (PNG, JPG, etc.) scaled to fit
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Barcodes and codes
+- **1D barcodes** — Code 128, Code 39, EAN-13, EAN-8, UPC-A, UPC-E, PDF417
+- **2D codes** — QR Code, Data Matrix, Aztec Code
+- Control bar height, text inclusion, and text size per barcode element
+- Bars and human-readable text scale independently when resizing
 
-## Expanding the ESLint configuration
+### Canvas / label settings
+- Set exact label size in **millimeters** at 203 / 300 / 600 DPI
+- Square or **rounded corners** — content is clipped to the corner shape
+- Grid overlay and snap-to-element alignment guides
+- Background color
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Editing tools
+- **Select, move, resize** (8-handle resize + rotation)
+- **Group / Ungroup** (Ctrl+G / Ctrl+Shift+G)
+- **Z-order** — bring to front/back, step forward/backward
+- **Duplicate** (Ctrl+D) and **Delete**
+- **Undo / Redo** (Ctrl+Z / Ctrl+Y) — full history
+- **Snapping** — elements snap to each other's edges and centers, and to canvas edges/center
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Multi-tab workflow
+- Work on multiple labels simultaneously in separate tabs
+- Each tab maintains its own canvas size, DPI, and element set
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### ZPL integration
+- **Export to ZPL** — convert the current label to Zebra ZPL code ready to send to a printer
+- **Import from ZPL** — load a `.zpl` file and reconstruct the label as editable elements (rectangles, text, barcodes, QR codes)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Export and print
+- **SVG** — lossless vector export
+- **JPG** — raster export
+- **PDF** — print-ready PDF at the correct physical dimensions
+- **Print dialog** — preview with correct mm dimensions and multi-copy support
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tech stack
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- React + TypeScript + Vite
+- Zustand + zundo (state management + undo/redo)
+- bwip-js (barcode rendering)
+- jsPDF + svg2pdf.js (PDF export)
+- lucide-react (icons)
+
+## Development
+
+```bash
+npm install
+npm run dev
 ```
