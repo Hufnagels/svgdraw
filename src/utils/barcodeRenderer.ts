@@ -18,20 +18,23 @@ export interface BarcodeRenderResult {
 export async function renderBarcode(
   symbology: BarcodeSymbology,
   data: string,
-  options: { includeText?: boolean; height?: number; scale?: number } = {}
+  options: { includeText?: boolean; height?: number; scale?: number; textHeight?: number } = {}
 ): Promise<BarcodeRenderResult> {
   if (!data.trim()) {
     return { svgString: '', rawWidth: 200, rawHeight: 100, innerSVG: '' }
   }
 
-  const svgString = bwipjs.toSVG({
+  const bwipOpts: Record<string, unknown> = {
     bcid: symbology,
     text: data,
     scale: options.scale ?? 3,
     height: options.height ?? 10,
     includetext: options.includeText ?? true,
     textxalign: 'center',
-  })
+  }
+  if (options.textHeight !== undefined) bwipOpts.textheight = options.textHeight
+
+  const svgString = bwipjs.toSVG(bwipOpts)
 
   // Parse viewBox dimensions
   const viewBoxMatch = svgString.match(/viewBox="[^"]*?(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)"/)

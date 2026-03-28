@@ -209,9 +209,19 @@ function BarcodeFields({ el, updateElement }: { el: BarcodeElement; updateElemen
   async function handleChange(patch: Partial<BarcodeElement>) {
     const merged = { ...el, ...patch }
     try {
-      const result = await renderBarcode(merged.symbology, merged.data, { includeText: merged.includeText })
+      const result = await renderBarcode(merged.symbology, merged.data, {
+        includeText: merged.includeText,
+        textHeight: merged.textHeight,
+        height: merged.barHeight,
+      })
+      // When barHeight changes, auto-resize bbox so bars render at natural proportions
+      const extra: Partial<BarcodeElement> = {}
+      if ('barHeight' in patch) {
+        const scaleX = el.width / result.rawWidth
+        extra.height = Math.round(result.rawHeight * scaleX)
+      }
       updateElement(el.id, {
-        ...patch,
+        ...patch, ...extra,
         cachedSvg: result.svgString,
         _rawWidth: result.rawWidth,
         _rawHeight: result.rawHeight,
@@ -238,6 +248,10 @@ function BarcodeFields({ el, updateElement }: { el: BarcodeElement; updateElemen
       </Field>
       <Field label="Height">
         <NumberInput value={el.height} min={20} onChange={(v) => updateElement(el.id, { height: v } as Partial<BarcodeElement>)} />
+      </Field>
+      <Field label="Bar Height">
+        <NumberInput value={el.barHeight ?? 10} min={2} max={200} step={1}
+          onChange={(v) => handleChange({ barHeight: v })} />
       </Field>
       <Field label="Include Text">
         <input type="checkbox" checked={el.includeText} onChange={(e) => handleChange({ includeText: e.target.checked })} style={{ cursor: 'pointer' }} />

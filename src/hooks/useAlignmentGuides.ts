@@ -36,12 +36,22 @@ export function computeAlignmentGuides(
   draggingIds: string[],
   proposedDelta: { dx: number; dy: number },
   elements: Record<string, DrawingElement>,
-  threshold: number
+  threshold: number,
+  canvasWidth = 0,
+  canvasHeight = 0,
 ): { snappedDelta: { dx: number; dy: number }; guides: AlignmentGuide[] } {
-  // Candidates: all non-dragging visible root elements
+  // Candidates: all non-dragging visible root elements + canvas edges/center
   const candidates: AlignPos[] = Object.values(elements)
     .filter((el) => !draggingIds.includes(el.id) && !el.locked && !el.parentId && el.visible)
     .map((el) => toBBoxPos(el.id, el, elements))
+
+  if (canvasWidth > 0 && canvasHeight > 0) {
+    candidates.push({
+      id: '__canvas__',
+      left: 0, right: canvasWidth, centerX: canvasWidth / 2,
+      top: 0, bottom: canvasHeight, centerY: canvasHeight / 2,
+    })
+  }
 
   if (candidates.length === 0) {
     return { snappedDelta: proposedDelta, guides: [] }

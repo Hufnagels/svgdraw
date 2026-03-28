@@ -117,6 +117,8 @@ export interface BarcodeElement extends BaseElement {
   width: number
   height: number
   includeText: boolean
+  textHeight?: number  // bwip-js textheight (pts); not shown in UI
+  barHeight?: number   // bwip-js height (bar height in bwip units); default 10
   cachedSvg: string // SVG string from bwip-js
   _rawWidth: number
   _rawHeight: number

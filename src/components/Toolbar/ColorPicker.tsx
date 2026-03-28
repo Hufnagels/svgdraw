@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   color: string
@@ -9,7 +10,26 @@ interface Props {
 export function ColorPicker({ color, onChange, label }: Props) {
   const [open, setOpen] = useState(false)
   const [inputVal, setInputVal] = useState(color)
-  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const btnRef      = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Sync hex input when color prop changes externally
+  useEffect(() => { setInputVal(color) }, [color])
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (!btnRef.current?.contains(t) && !dropdownRef.current?.contains(t))
+        setClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  function setClose() { setOpen(false) }
 
   function handleColorChange(e: React.ChangeEvent<HTMLInputElement>) {
     onChange(e.target.value)
@@ -23,13 +43,24 @@ export function ColorPicker({ color, onChange, label }: Props) {
     }
   }
 
+  function handleOpen() {
+    const r = btnRef.current?.getBoundingClientRect()
+    if (r) {
+      // Flip left if dropdown would overflow viewport right edge
+      const left = r.right - 160 < 0 ? r.left : Math.min(r.left, window.innerWidth - 168)
+      setPos({ top: r.bottom + 4, left })
+    }
+    setOpen((o) => !o)
+  }
+
   const isNone = color === 'none'
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <>
       <button
-        title={label}
-        onClick={() => setOpen((o) => !o)}
+        ref={btnRef}
+        title={label || undefined}
+        onClick={handleOpen}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -54,14 +85,19 @@ export function ColorPicker({ color, onChange, label }: Props) {
               : color,
           }}
         />
-        <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+        {label && (
+          <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+        )}
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
+          ref={dropdownRef}
           style={{
             position: 'fixed',
-            zIndex: 1000,
+            top: pos.top,
+            left: pos.left,
+            zIndex: 9999,
             background: 'var(--bg-surface)',
             border: '1px solid var(--border)',
             borderRadius: 8,
@@ -71,7 +107,9 @@ export function ColorPicker({ color, onChange, label }: Props) {
           }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div style={{ marginBottom: 8, color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600 }}>{label}</div>
+          {label && (
+            <div style={{ marginBottom: 8, color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600 }}>{label}</div>
+          )}
           <input
             type="color"
             value={isNone ? '#ffffff' : color}
@@ -93,10 +131,11 @@ export function ColorPicker({ color, onChange, label }: Props) {
               fontSize: 12,
               fontFamily: 'monospace',
               marginBottom: 8,
+              boxSizing: 'border-box',
             }}
           />
           <button
-            onClick={() => { onChange('none'); setInputVal('none'); setOpen(false) }}
+            onClick={() => { onChange('none'); setInputVal('none'); setClose() }}
             style={{
               width: '100%',
               padding: '4px',
@@ -112,7 +151,7 @@ export function ColorPicker({ color, onChange, label }: Props) {
             None (transparent)
           </button>
           <button
-            onClick={() => setOpen(false)}
+            onClick={setClose}
             style={{
               width: '100%',
               padding: '4px',
@@ -126,8 +165,9 @@ export function ColorPicker({ color, onChange, label }: Props) {
           >
             Done
           </button>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }

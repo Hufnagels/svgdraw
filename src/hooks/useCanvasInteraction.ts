@@ -217,7 +217,7 @@ export function useCanvasInteraction(svgRef: React.RefObject<SVGSVGElement | nul
           const rawDx = pt.x - iState.startX
           const rawDy = pt.y - iState.startY
           const { snappedDelta, guides } = store.canvas.snapToElements
-            ? computeAlignmentGuides(iState.elementIds, { dx: rawDx, dy: rawDy }, store.elements, store.canvas.snapThreshold)
+            ? computeAlignmentGuides(iState.elementIds, { dx: rawDx, dy: rawDy }, store.elements, store.canvas.snapThreshold, store.canvas.width, store.canvas.height)
             : { snappedDelta: { dx: rawDx, dy: rawDy }, guides: [] }
 
           store.setAlignmentGuides(guides)
