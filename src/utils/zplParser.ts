@@ -57,12 +57,14 @@ export function parseZPL(zpl: string, dpi: DPI): ZPLParseResult {
   // ── 2. Tokenize and collect raw blocks ───────────────────────────────────
   const raw: Block[] = []
 
-  let curX = 0, curY = 0, hasFO = false
+  let curX = 0, curY = 0, hasFO = false, hasFR = false
   // globalFontH: set by ^CF, persists across fields
   let globalFontH = 0
   let fontH = 10, fbW = 0, justify = 'L', hasFont = false, hasFB = false
   let bcCmd = '', bcH = 50, bcIncludeText = false, hasBc = false
   let qrMag = 1, qrEcc = '2', hasQR = false
+  // byH: bar height from ^BY, persists label-wide until next ^BY
+  let byH = 0
 
   for (const rawToken of zpl.split('^')) {
     const t = rawToken.trim()
@@ -72,16 +74,31 @@ export function parseZPL(zpl: string, dpi: DPI): ZPLParseResult {
     if (t.startsWith('FO')) {
       const [xS, yS] = t.slice(2).split(',')
       curX = parseInt(xS) || 0; curY = parseInt(yS) || 0
-      hasFO = true; hasFont = hasFB = hasBc = hasQR = false
+      hasFO = true; hasFR = false; hasFont = hasFB = hasBc = hasQR = false
+    }
+
+    // ── Reverse field (^FR) — inverts print color for this field ───────────
+    else if (t === 'FR' && hasFO) {
+      hasFR = true
+    }
+
+    // ── Bar/module defaults ^BY{moduleW},{ratio},{barH} ────────────────────
+    else if (t.startsWith('BY')) {
+      const byP = t.slice(2).split(',')
+      const h = parseInt(byP[2])
+      if (!isNaN(h) && h > 0) byH = h
     }
 
     // ── Graphic box ────────────────────────────────────────────────────────
     else if (t.startsWith('GB') && hasFO) {
       const [wS, hS, tS, col, rS] = t.slice(2).split(',')
+      // ^FR inverts color: B→W, W→B
+      const rawColor = col || 'B'
+      const color = hasFR ? (rawColor === 'W' ? 'B' : 'W') : rawColor
       raw.push({
         kind: 'gb', x: curX, y: curY,
         w: parseInt(wS) || 0, h: parseInt(hS) || 0, t: parseInt(tS) || 0,
-        color: col || 'B', rounding: parseInt(rS) || 0,
+        color, rounding: parseInt(rS) || 0,
       })
     }
 
@@ -113,14 +130,15 @@ export function parseZPL(zpl: string, dpi: DPI): ZPLParseResult {
       const p = t.slice(cmd.length).split(',')
       // p[0]='' (starts with ','), p[1..] = params
       bcCmd = cmd.endsWith('N') ? cmd : cmd + 'N'
+      const defaultH = byH || 50
       if (cmd.startsWith('B3')) {
         // ^B3[N],{checkDigit},{h},{printLine}
-        bcH = parseInt(p[2]) || 50; bcIncludeText = p[3]?.trim() === 'Y'
+        bcH = parseInt(p[2]) || defaultH; bcIncludeText = p[3]?.trim() === 'Y'
       } else if (cmd.startsWith('B7')) {
-        bcH = parseInt(p[1]) || 50; bcIncludeText = false
+        bcH = parseInt(p[1]) || defaultH; bcIncludeText = false
       } else {
         // BC, BE, B8, BUN, BUE: ^Bcmd,{h},{printLine}
-        bcH = parseInt(p[1]) || 50; bcIncludeText = p[2]?.trim() === 'Y'
+        bcH = parseInt(p[1]) || defaultH; bcIncludeText = p[2]?.trim() === 'Y'
       }
       hasBc = true
     }
@@ -145,7 +163,7 @@ export function parseZPL(zpl: string, dpi: DPI): ZPLParseResult {
     }
 
     else if (t.startsWith('FS')) {
-      hasFO = false
+      hasFO = false; hasFR = false
     }
   }
 

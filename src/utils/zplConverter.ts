@@ -68,13 +68,18 @@ function lineToZpl(el: LineElement, dpi: number): string[] {
   if (!el.style.stroke || el.style.stroke === 'none' || el.style.strokeWidth === 0) return []
   const sw = Math.max(1, d(el.style.strokeWidth, dpi))
   const col = hexToZplColor(el.style.stroke)
+  const half = el.style.strokeWidth / 2
   const isHorizontal = Math.abs(el.y2 - el.y1) <= Math.abs(el.x2 - el.x1)
   if (isHorizontal) {
-    const lx = d(Math.min(el.x1, el.x2), dpi), ly = d(Math.min(el.y1, el.y2), dpi)
+    // y1/y2 are the line's centerline; ZPL ^FO expects the top-left of the bounding box
+    const lx = d(Math.min(el.x1, el.x2), dpi)
+    const ly = d(Math.min(el.y1, el.y2) - half, dpi)
     const lw = Math.max(1, d(Math.abs(el.x2 - el.x1), dpi))
     return [`^FO${lx},${ly}^GB${lw},${sw},${sw},${col},0^FS`]
   } else {
-    const lx = d(Math.min(el.x1, el.x2), dpi), ly = d(Math.min(el.y1, el.y2), dpi)
+    // x1/x2 are the line's centerline
+    const lx = d(Math.min(el.x1, el.x2) - half, dpi)
+    const ly = d(Math.min(el.y1, el.y2), dpi)
     const lh = Math.max(1, d(Math.abs(el.y2 - el.y1), dpi))
     return [`^FO${lx},${ly}^GB${sw},${lh},${sw},${col},0^FS`]
   }
