@@ -16,5 +16,18 @@ export default defineConfig({
   },
   server: {
     port: 5182,
+    proxy: {
+      '/labeling': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost',
+        changeOrigin: true,
+        ...(process.env.VITE_BACKEND_URL
+          ? { rewrite: (path: string) => path.replace(/^\/labeling/, '') }
+          : {}),
+      },
+      '/auth': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost',
+        changeOrigin: true,
+      },
+    },
   }
 })

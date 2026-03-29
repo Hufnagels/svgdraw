@@ -1,16 +1,24 @@
 import { useState, useEffect, useRef } from 'react'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, Wifi } from 'lucide-react'
+import axios from 'axios'
 import { useDrawingStore } from '../store/useDrawingStore'
 import { useTabsStore } from '../store/useTabsStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { exportSVG } from './ExportDialog/SVGExporter'
+import { convertToZPL } from '../utils/zplConverter'
 
 interface Props { onClose: () => void }
 
 export function PrintDialog({ onClose }: Props) {
-  const canvas   = useDrawingStore((s) => s.canvas)
-  const svgRef   = useRef<HTMLDivElement>(null)
-  const [svgStr, setSvgStr] = useState('')
-  const [copies, setCopies] = useState(1)
+  const canvas    = useDrawingStore((s) => s.canvas)
+  const elements  = useDrawingStore((s) => s.elements)
+  const zOrder    = useDrawingStore((s) => s.zOrder)
+  const token     = useAuthStore((s) => s.token)
+  const svgRef    = useRef<HTMLDivElement>(null)
+  const [svgStr, setSvgStr]       = useState('')
+  const [copies, setCopies]       = useState(1)
+  const [apiStatus, setApiStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
+  const [apiMsg, setApiMsg]       = useState('')
 
   const labelName = useTabsStore.getState().getActiveCanvasTab()?.name ?? 'label'
 
@@ -26,6 +34,23 @@ export function PrintDialog({ onClose }: Props) {
   const scale = Math.min(1, maxPreviewW / canvas.width, maxPreviewH / canvas.height)
   const previewW = Math.round(canvas.width  * scale)
   const previewH = Math.round(canvas.height * scale)
+
+  async function handleApiPrint() {
+    setApiStatus('sending')
+    setApiMsg('')
+    try {
+      const zpl = convertToZPL(elements, zOrder, canvas, { dpi: canvas.dpi === 300 ? 300 : 203 })
+      await axios.post('/labeling/print', { zpl }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setApiStatus('ok')
+      setApiMsg('Sent to printer')
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setApiStatus('error')
+      setApiMsg(detail ?? 'Print failed')
+    }
+  }
 
   function handlePrint() {
     if (!svgStr) return
@@ -136,7 +161,27 @@ export function PrintDialog({ onClose }: Props) {
             }}
           />
           <div style={{ flex: 1 }} />
+
+          {/* API status message */}
+          {apiStatus !== 'idle' && (
+            <span style={{ fontSize: 12, color: apiStatus === 'ok' ? '#4ade80' : apiStatus === 'error' ? '#f87171' : 'var(--text-secondary)' }}>
+              {apiStatus === 'sending' ? 'Sending…' : apiMsg}
+            </span>
+          )}
+
           <button onClick={onClose} style={{ ...btnBase, background: 'var(--bg-input)', color: 'var(--text-secondary)' }}>Cancel</button>
+
+          {/* Send to printer via API — only when authenticated */}
+          {token && (
+            <button
+              onClick={handleApiPrint}
+              disabled={apiStatus === 'sending'}
+              style={{ ...btnBase, background: 'var(--bg-input)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Wifi size={13} /> Send to Printer
+            </button>
+          )}
+
           <button onClick={handlePrint} style={{ ...btnBase, background: '#2563eb', color: '#fff', border: '1px solid #1d4ed8', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Printer size={13} /> Print
           </button>

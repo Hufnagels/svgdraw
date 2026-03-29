@@ -1,6 +1,7 @@
 import { useTabsStore, DEFAULT_CANVAS_SETTINGS } from '../../store/useTabsStore'
 import { mmToPx, DPI_OPTIONS, type DPI } from '../../utils/units'
 import { useState } from 'react'
+import { TemplateCloud } from '../TemplateCloud'
 
 interface Template { id: string; name: string; widthMm: number; heightMm: number }
 
@@ -56,6 +57,8 @@ export function TemplatesView() {
           <TemplateCard key={t.id} template={t} dpi={dpi} onOpen={() => openTemplate(t)} />
         ))}
       </div>
+
+      <TemplateCloud />
     </div>
   )
 }

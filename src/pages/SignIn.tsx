@@ -234,6 +234,9 @@ export default function SignIn() {
                 : 'Sign In'
               }
             </button>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              {'admin / admin123'}
+            </div>
           </form>
         </div>
       </div>
