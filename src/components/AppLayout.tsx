@@ -5,7 +5,7 @@ import { Canvas } from './Canvas/Canvas'
 import { PropertiesPanel } from './Properties/PropertiesPanel'
 import { Sidebar } from './Sidebar/Sidebar'
 import { ExportDialog } from './ExportDialog/ExportDialog'
-import { ThemeToggle } from './ThemeToggle'
+import { AvatarMenu } from './AvatarMenu'
 import { SaveLoad } from './SaveLoad'
 import { TabBar } from './TabBar/TabBar'
 import { TemplatesView } from './TabBar/TemplatesView'
@@ -14,6 +14,7 @@ import { PrintDialog } from './PrintDialog'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { useDrawingStore } from '../store/useDrawingStore'
 import { useTabsStore, TEMPLATES_TAB_ID, LAST_EDITED_TAB_ID } from '../store/useTabsStore'
+import { VITE_APP_NAME } from '../features/config';
 
 export function AppLayout() {
   useKeyboardShortcuts()
@@ -63,7 +64,7 @@ export function AppLayout() {
         flexShrink: 0,
       }}>
         <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 15, letterSpacing: '-0.02em' }}>
-          SVGDraw
+          {VITE_APP_NAME}
         </div>
         <div style={{ flex: 1 }} />
 
@@ -91,9 +92,11 @@ export function AppLayout() {
         )}
 
         <SaveLoad />
-        <ThemeToggle />
+       
         {isCanvas && (
           <>
+            <ExportDialog getSVGRef={getSVGRef} />
+
             <button
               onClick={() => setShowPrint(true)}
               title="Print (Ctrl+P)"
@@ -107,9 +110,11 @@ export function AppLayout() {
             >
               <Printer size={14} /> Print
             </button>
-            <ExportDialog getSVGRef={getSVGRef} />
+            
           </>
         )}
+
+         <AvatarMenu />
       </div>
 
       {/* Tab bar */}
